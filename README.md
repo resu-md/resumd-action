@@ -27,7 +27,8 @@ jobs:
                 **/node_modules/**
                 **/.git/**
                 **/.github/**
-            # artifact_name: pdfs # (optional) name of the .zip output, defaults to "Markdown_PDFs_Converted"
+            generate_html: false # Optional, defaults to false
+            artifact_name: MyArtifact # Optional, defaults to "Markdown_PDFs_Converted"
 ```
 
 All Markdown files matching the specified glob patterns will be converted to PDFs using the (one or many) CSS files **located in the _same_ folder** on each push or pull request.

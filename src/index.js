@@ -35,7 +35,7 @@ async function run() {
             : path.resolve(workspace, "output");
         await fs.mkdir(outputDir, { recursive: true });
 
-        const emitHtml = getBooleanInput("emit_html", true);
+        const generateHtml = getBooleanInput("generate_html", true);
         const failOnMissingCss = getBooleanInput("fail_on_missing_css", false);
         const disableSandbox = getBooleanInput(
             "disable_sandbox",
@@ -138,7 +138,7 @@ async function run() {
             const htmlOutputPath = path.join(targetDir, `${basename}.html`);
             const pdfOutputPath = path.join(targetDir, `${basename}.pdf`);
 
-            if (emitHtml) {
+            if (generateHtml) {
                 await fs.writeFile(htmlOutputPath, documentHtml, "utf8");
                 core.info(
                     `HTML written to ${path.relative(
@@ -162,7 +162,7 @@ async function run() {
                 await fs.unlink(tempHtmlPath);
             }
 
-            if (emitHtml) {
+            if (generateHtml) {
                 await convertHtmlToPdf({
                     chromeExecutable,
                     htmlPath: htmlOutputPath,
@@ -178,7 +178,7 @@ async function run() {
 
             results.push({
                 markdown: normalizePath(relativeMarkdownPath),
-                html: emitHtml
+                html: generateHtml
                     ? normalizePath(path.relative(workspace, htmlOutputPath))
                     : null,
                 pdf: normalizePath(path.relative(workspace, pdfOutputPath)),
@@ -198,31 +198,43 @@ async function run() {
         core.setOutput("files", JSON.stringify(results));
 
         try {
-            await core.summary
+            const summary = core.summary
                 .addHeading("Summary", 3)
                 .addRaw(`Converted ${results.length} Markdown to PDF.`)
-                .addBreak()
-                .addTable([
-                    [
-                        { data: "Markdown input", header: true },
-                        { data: "PDF output", header: true },
-                        { data: "HTML output", header: true },
-                        { data: "CSS styles used", header: true },
-                    ],
-                    ...results.map((entry) => [
-                        entry.markdown,
-                        entry.pdf,
-                        entry.html || "",
-                        entry.css.join(", ") || "",
-                    ]),
-                ])
-                .write();
+                .addBreak();
+
+            const headers = [
+                { data: "Markdown input", header: true },
+                { data: "PDF output", header: true },
+            ];
+            if (generateHtml) {
+                headers.push({ data: "HTML output", header: true });
+            }
+            headers.push({ data: "CSS styles used", header: true });
+
+            const rows = results.map((entry) => {
+                const row = [entry.markdown, entry.pdf];
+                if (generateHtml) {
+                    row.push(entry.html || "");
+                }
+                row.push(entry.css.join(", ") || "");
+                return row;
+            });
+
+            summary.addTable([headers, ...rows]);
+
+            if (!generateHtml) {
+                summary.addRaw(
+                    "HTML output is disabled. Enable it by setting `generate_html: true` in your workflow."
+                );
+            }
+
+            await summary.write();
         } catch (summaryError) {
             core.debug(
-                `Skipping job summary: ${
-                    summaryError instanceof Error
-                        ? summaryError.message
-                        : String(summaryError)
+                `Skipping job summary: ${summaryError instanceof Error
+                    ? summaryError.message
+                    : String(summaryError)
                 }`
             );
         }
@@ -304,23 +316,23 @@ async function detectChromeExecutable(explicitPath) {
     const platformCandidates =
         process.platform === "win32"
             ? [
-                  "C:/Program Files/Google/Chrome/Application/chrome.exe",
-                  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-                  process.env.LOCALAPPDATA
-                      ? path.join(
-                            process.env.LOCALAPPDATA,
-                            "Google/Chrome/Application/chrome.exe"
-                        )
-                      : undefined,
-              ]
+                "C:/Program Files/Google/Chrome/Application/chrome.exe",
+                "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+                process.env.LOCALAPPDATA
+                    ? path.join(
+                        process.env.LOCALAPPDATA,
+                        "Google/Chrome/Application/chrome.exe"
+                    )
+                    : undefined,
+            ]
             : [
-                  "/usr/bin/google-chrome",
-                  "/usr/bin/google-chrome-stable",
-                  "/usr/bin/chromium",
-                  "/usr/bin/chromium-browser",
-                  "/snap/bin/chromium",
-                  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-              ];
+                "/usr/bin/google-chrome",
+                "/usr/bin/google-chrome-stable",
+                "/usr/bin/chromium",
+                "/usr/bin/chromium-browser",
+                "/snap/bin/chromium",
+                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            ];
 
     for (const candidate of platformCandidates) {
         if (candidate && existsSync(candidate)) {
@@ -456,8 +468,7 @@ async function convertHtmlToPdf({
 
         await waitForFonts(page, timeoutMs).catch((error) => {
             core.debug(
-                `Font readiness wait failed: ${
-                    error instanceof Error ? error.message : String(error)
+                `Font readiness wait failed: ${error instanceof Error ? error.message : String(error)
                 }`
             );
         });

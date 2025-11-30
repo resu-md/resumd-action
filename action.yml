@@ -23,7 +23,7 @@ inputs:
     global_css:
         description: "Newline-separated glob patterns for CSS files that should be included with every document."
         required: false
-    emit_html:
+    generate_html:
         description: "Set to 'false' to skip writing HTML files and only emit PDFs."
         required: false
         default: "true"

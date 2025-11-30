@@ -12,6 +12,11 @@ on:
                 description: "Newline-separated glob patterns to exclude from the search."
                 required: false
                 type: string
+            generate_html:
+                description: "Set to 'true' to also emit HTML files."
+                required: false
+                default: false
+                type: boolean
             artifact_name:
                 description: "Name of the artifact to upload."
                 required: false
@@ -29,4 +34,5 @@ jobs:
               with:
                   files: ${{ inputs.files }}
                   exclude: ${{ inputs.exclude }}
+                  generate_html: ${{ inputs.generate_html }}
                   artifact_name: ${{ inputs.artifact_name }}
