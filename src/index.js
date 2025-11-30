@@ -3,10 +3,10 @@ const glob = require("@actions/glob");
 const path = require("path");
 const fs = require("fs/promises");
 const { existsSync } = require("fs");
-const { spawn } = require("child_process");
 const { pathToFileURL } = require("url");
 const matter = require("gray-matter");
 const MarkdownIt = require("markdown-it");
+const puppeteer = require("puppeteer-core");
 
 async function run() {
     try {
@@ -439,61 +439,83 @@ async function convertHtmlToPdf({
     disableSandbox,
     timeoutMs,
 }) {
-    const args = [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--disable-dev-shm-usage",
-        "--print-to-pdf-no-header",
-        "--no-pdf-header-footer",
-        `--print-to-pdf=${pdfPath}`,
-    ];
-    if (disableSandbox) {
-        args.push("--no-sandbox", "--disable-setuid-sandbox");
-    }
-    args.push(pathToFileURL(htmlPath).href);
-
     await fs.mkdir(path.dirname(pdfPath), { recursive: true });
 
-    await execFileWithTimeout(chromeExecutable, args, timeoutMs);
+    const launchArgs = [
+        "--disable-dev-shm-usage",
+        "--no-first-run",
+        "--no-default-browser-check",
+    ];
+    if (disableSandbox) {
+        launchArgs.push("--no-sandbox", "--disable-setuid-sandbox");
+    }
+
+    const browser = await puppeteer.launch({
+        executablePath: chromeExecutable,
+        headless: "new",
+        args: launchArgs,
+    });
+
+    try {
+        const page = await browser.newPage();
+        await page.goto(pathToFileURL(htmlPath).href, {
+            waitUntil: "networkidle0",
+            timeout: timeoutMs,
+        });
+
+        await waitForFonts(page, timeoutMs).catch((error) => {
+            core.debug(
+                `Font readiness wait failed: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            );
+        });
+
+        await page.emulateMediaType("print");
+
+        await page.pdf({
+            path: pdfPath,
+            printBackground: true,
+            preferCSSPageSize: true,
+            displayHeaderFooter: false,
+            timeout: timeoutMs,
+        });
+    } finally {
+        await browser.close();
+    }
 }
 
-function execFileWithTimeout(file, args, timeoutMs) {
-    return new Promise((resolve, reject) => {
-        const child = spawn(file, args, { stdio: ["ignore", "pipe", "pipe"] });
-        let stderr = "";
-        child.stderr.on("data", (data) => {
-            stderr += data.toString();
-        });
+async function waitForFonts(page, timeoutMs) {
+    const supportsFontLoading = await page.evaluate(
+        () => typeof document !== "undefined" && Boolean(document.fonts)
+    );
+    if (!supportsFontLoading) {
+        return;
+    }
 
-        const timeout = setTimeout(() => {
-            child.kill("SIGKILL");
-            reject(
-                new Error(
-                    `Chrome timed out after ${timeoutMs} ms. Last stderr output: ${stderr}`
-                )
-            );
-        }, timeoutMs);
+    const readyPromise = page.evaluate(() => document.fonts.ready);
+    if (!timeoutMs || timeoutMs <= 0) {
+        await readyPromise;
+        return;
+    }
 
-        child.on("error", (error) => {
-            clearTimeout(timeout);
-            reject(error);
-        });
-
-        child.on("close", (code) => {
-            clearTimeout(timeout);
-            if (code !== 0) {
+    await Promise.race([
+        readyPromise,
+        new Promise((_, reject) => {
+            const timer = setTimeout(() => {
+                clearTimeout(timer);
                 reject(
                     new Error(
-                        `Chrome exited with code ${code}. Stderr: ${stderr}`
+                        `Timed out waiting for web fonts after ${timeoutMs} ms`
                     )
                 );
-            } else {
-                resolve();
-            }
-        });
-    });
+            }, timeoutMs);
+
+            readyPromise.then(() => {
+                clearTimeout(timer);
+            }, reject);
+        }),
+    ]);
 }
 
 function normalizePath(value) {
