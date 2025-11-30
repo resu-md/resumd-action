@@ -1,9 +1,10 @@
-name: "Generate resume PDFs"
-description: "Convert Markdown resumes and CSS into ready-to-share HTML and PDF files."
+name: "Markdown to PDF"
+description: "Convert Markdown documents and CSS into ready-to-share HTML and PDF files."
 author: "resu-md"
 branding:
     icon: "file-text"
     color: "blue"
+
 inputs:
     files:
         description: "Newline-separated glob patterns that match Markdown files to render."
@@ -20,13 +21,12 @@ inputs:
         description: "Absolute path to the Chrome/Chromium executable. Auto-detected when omitted."
         required: false
     global_css:
-        description: "Newline-separated glob patterns for CSS files that should be included with every resume."
+        description: "Newline-separated glob patterns for CSS files that should be included with every document."
         required: false
     emit_html:
         description: "Set to 'false' to skip writing HTML files and only emit PDFs."
         required: false
         default: "true"
-
     fail_on_missing_css:
         description: "Fail if no CSS files are found for a Markdown file (defaults to warning only)."
         required: false
@@ -42,6 +42,32 @@ inputs:
     extra_html_head:
         description: "Raw HTML injected into the <head> of each generated document."
         required: false
+    artifact_name:
+        description: "Name of the artifact to upload."
+        required: false
+        default: "Markdown_PDFs_Converted"
+
 runs:
-    using: "node20"
-    main: "dist/index.js"
+    using: "composite"
+    steps:
+        - name: Convert Markdown files to PDF
+          run: node ${{ github.action_path }}/dist/index.js
+          shell: bash
+          env:
+              INPUT_FILES: ${{ inputs.files }}
+              INPUT_EXCLUDE: ${{ inputs.exclude }}
+              INPUT_OUTPUT_DIR: ${{ inputs.output_dir }}
+              INPUT_CHROME_PATH: ${{ inputs.chrome_path }}
+              INPUT_GLOBAL_CSS: ${{ inputs.global_css }}
+              INPUT_EMIT_HTML: ${{ inputs.emit_html }}
+              INPUT_FAIL_ON_MISSING_CSS: ${{ inputs.fail_on_missing_css }}
+              INPUT_DISABLE_SANDBOX: ${{ inputs.disable_sandbox }}
+              INPUT_PDF_TIMEOUT_MS: ${{ inputs.pdf_timeout_ms }}
+              INPUT_EXTRA_HTML_HEAD: ${{ inputs.extra_html_head }}
+
+        - name: Upload generated artifacts
+          uses: actions/upload-artifact@v4
+          with:
+              name: ${{ inputs.artifact_name }}
+              path: ${{ inputs.output_dir }}
+              if-no-files-found: error

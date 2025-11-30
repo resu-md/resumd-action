@@ -1,0 +1,32 @@
+name: Markdown to PDF
+
+on:
+    workflow_call:
+        inputs:
+            files:
+                description: "Newline-separated glob patterns that match Markdown files to render."
+                required: false
+                default: "**/*.md"
+                type: string
+            exclude:
+                description: "Newline-separated glob patterns to exclude from the search."
+                required: false
+                type: string
+            artifact_name:
+                description: "Name of the artifact to upload."
+                required: false
+                default: "Markdown_PDFs_Converted"
+                type: string
+
+jobs:
+    pdf:
+        name: Convert Markdown to PDF
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Generate PDFs and HTML
+              uses: resu-md/resumd-action@main
+              with:
+                  files: ${{ inputs.files }}
+                  exclude: ${{ inputs.exclude }}
+                  artifact_name: ${{ inputs.artifact_name }}
