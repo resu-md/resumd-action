@@ -1,0 +1,50 @@
+name: "Generate resume PDFs"
+description: "Convert Markdown resumes and CSS into ready-to-share HTML and PDF files."
+author: "resu-md"
+branding:
+    icon: "file-text"
+    color: "blue"
+inputs:
+    files:
+        description: "Newline-separated glob patterns that match Markdown files to render."
+        required: false
+        default: "**/*.md"
+    exclude:
+        description: "Newline-separated glob patterns to exclude from the search."
+        required: false
+    output_dir:
+        description: "Directory (relative to the workspace) where rendered files will be written."
+        required: false
+        default: "output"
+    chrome_path:
+        description: "Absolute path to the Chrome/Chromium executable. Auto-detected when omitted."
+        required: false
+    global_css:
+        description: "Newline-separated glob patterns for CSS files that should be included with every resume."
+        required: false
+    emit_html:
+        description: "Set to 'false' to skip writing HTML files and only emit PDFs."
+        required: false
+        default: "true"
+    include_readme:
+        description: "Set to 'true' to convert README.md files as well."
+        required: false
+        default: "false"
+    fail_on_missing_css:
+        description: "Fail if no CSS files are found for a Markdown file (defaults to warning only)."
+        required: false
+        default: "false"
+    disable_sandbox:
+        description: "Disable Chrome sandbox (recommended on Linux runners)."
+        required: false
+        default: "true"
+    pdf_timeout_ms:
+        description: "Milliseconds to wait for Chrome to finish generating a PDF before timing out."
+        required: false
+        default: "20000"
+    extra_html_head:
+        description: "Raw HTML injected into the <head> of each generated document."
+        required: false
+runs:
+    using: "node20"
+    main: "dist/index.js"
