@@ -26,10 +26,7 @@ inputs:
         description: "Set to 'false' to skip writing HTML files and only emit PDFs."
         required: false
         default: "true"
-    include_readme:
-        description: "Set to 'true' to convert README.md files as well."
-        required: false
-        default: "false"
+
     fail_on_missing_css:
         description: "Fail if no CSS files are found for a Markdown file (defaults to warning only)."
         required: false

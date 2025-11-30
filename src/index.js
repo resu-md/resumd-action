@@ -14,26 +14,15 @@ async function run() {
         process.chdir(workspace);
 
         const markdownPatterns = getPatternInput("files", ["**/*.md"]);
-        const excludePatterns = getPatternInput("exclude", []);
-        const defaultExcludes = [
-            "!**/node_modules/**",
-            "!**/.git/**",
-            "!**/.github/**",
-        ];
-        const searchPatterns = markdownPatterns
-            .concat(excludePatterns)
-            .concat(defaultExcludes);
+        const excludePatterns = getPatternInput("exclude", []).map((p) =>
+            p.startsWith("!") ? p : `!${p}`
+        );
+        const searchPatterns = markdownPatterns.concat(excludePatterns);
 
-        const includeReadme = getBooleanInput("include_readme", false);
-        const markdownFiles = (await expandPatterns(searchPatterns, workspace))
-            .filter((file) => file.toLowerCase().endsWith(".md"))
-            .filter((file) => {
-                if (includeReadme) {
-                    return true;
-                }
-                const base = path.basename(file).toLowerCase();
-                return base !== "readme.md";
-            });
+        const markdownFiles = (
+            await expandPatterns(searchPatterns, workspace)
+        ).filter((file) => file.toLowerCase().endsWith(".md"));
+
         if (!markdownFiles.length) {
             throw new Error(
                 "No markdown files matched the requested patterns."
