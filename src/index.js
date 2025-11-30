@@ -446,6 +446,7 @@ async function convertHtmlToPdf({
         "--no-default-browser-check",
         "--disable-dev-shm-usage",
         "--print-to-pdf-no-header",
+        "--no-pdf-header-footer",
         `--print-to-pdf=${pdfPath}`,
     ];
     if (disableSandbox) {
