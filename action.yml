@@ -1,0 +1,17 @@
+name: "Resumd PDF Generator"
+description: "Generates a PDF resume from Markdown and CSS files."
+inputs:
+    markdown-file:
+        description: "Path to the markdown file. If not provided, the action will try to find a single markdown file in the repository."
+        required: false
+    css-files:
+        description: 'Glob pattern for CSS files to include. Defaults to "**/*.css".'
+        required: false
+        default: "**/*.css"
+    output-filename:
+        description: "Name of the output PDF file."
+        required: false
+        default: "resume.pdf"
+runs:
+    using: "node20"
+    main: "dist/index.js"
