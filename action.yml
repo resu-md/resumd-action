@@ -15,7 +15,7 @@ inputs:
     output_dir:
         description: "Directory (relative to the workspace) where rendered files will be written."
         required: false
-        default: "resume-build"
+        default: "output"
     chrome_path:
         description: "Absolute path to the Chrome/Chromium executable. Auto-detected when omitted."
         required: false

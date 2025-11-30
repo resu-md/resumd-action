@@ -43,7 +43,7 @@ async function run() {
         const outputDirInput = core.getInput("output_dir");
         const outputDir = outputDirInput
             ? path.resolve(workspace, outputDirInput)
-            : path.resolve(workspace, "resume-build");
+            : path.resolve(workspace, "output");
         await fs.mkdir(outputDir, { recursive: true });
 
         const emitHtml = getBooleanInput("emit_html", true);

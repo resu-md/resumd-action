@@ -41,7 +41,7 @@ jobs:
 | --- | --- | --- |
 | `files` | `**/*.md` | Newline-separated glob patterns that select Markdown resumes. |
 | `exclude` | | Additional glob patterns to skip. |
-| `output_dir` | `resume-build` | Directory (relative to the workspace) that will contain the generated HTML and PDF files. |
+| `output_dir` | `output` | Directory (relative to the workspace) that will contain the generated HTML and PDF files. |
 | `chrome_path` | auto | Absolute path to the Chrome/Chromium binary. Override when running on self-hosted runners. |
 | `global_css` | | Extra CSS files (newline-separated glob patterns) that are injected in every resume. |
 | `emit_html` | `true` | Set to `false` when you only need PDFs. |
@@ -86,8 +86,8 @@ Example:
 [
   {
     "markdown": "resume.md",
-    "html": "resume-build/resume.html",
-    "pdf": "resume-build/resume.pdf",
+    "html": "output/resume.html",
+    "pdf": "output/resume.pdf",
     "css": ["resume-template/theme.css"]
   }
 ]
