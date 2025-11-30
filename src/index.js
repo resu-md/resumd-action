@@ -210,19 +210,21 @@ async function run() {
 
         try {
             await core.summary
-                .addHeading("Resumes generated")
-                .addRaw(`Total: ${results.length}`)
+                .addHeading("Summary", 3)
+                .addRaw(`Converted ${results.length} Markdown to PDF.`)
                 .addBreak()
                 .addTable([
                     [
-                        { data: "Markdown", header: true },
-                        { data: "PDF", header: true },
-                        { data: "HTML", header: true },
+                        { data: "Markdown input", header: true },
+                        { data: "PDF output", header: true },
+                        { data: "HTML output", header: true },
+                        { data: "CSS styles used", header: true },
                     ],
                     ...results.map((entry) => [
                         entry.markdown,
                         entry.pdf,
-                        entry.html || "(not saved)",
+                        entry.html || "",
+                        entry.css.join(", ") || "",
                     ]),
                 ])
                 .write();
