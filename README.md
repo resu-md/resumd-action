@@ -44,12 +44,10 @@ lang: en
 css:
   - theme.css
   - ../../shared/print.css
-output_name: my-document
 ---
 ```
 
--   `title`: Sets the HTML `<title>` element.
+-   `title`: Sets the output filename (without extension) and the HTML `<title>` element.
 -   `lang`: Sets the `<html lang="...">` attribute.
 -   `css`: Relative paths (from the Markdown file) to include specific CSS files. When omitted, every `.css` file in the same folder is included by default.
--   `output_name`: Overrides the output file stem for both HTML and PDF.
 -   `draft` / `skip`: Set to `true` to skip rendering that Markdown file. Alternatively set `publish: false`.

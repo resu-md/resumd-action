@@ -118,7 +118,7 @@ async function run() {
             const title =
                 frontmatter.title ||
                 path.basename(markdownPath, path.extname(markdownPath));
-            const lang = frontmatter.lang || "en";
+            const lang = frontmatter.lang || "";
 
             const documentHtml = buildHtmlDocument({
                 title,
@@ -132,9 +132,7 @@ async function run() {
             const targetDir = path.join(outputDir, relativeDir);
             await fs.mkdir(targetDir, { recursive: true });
 
-            const basename =
-                frontmatter.output_name ||
-                path.basename(markdownPath, path.extname(markdownPath));
+            const basename = title;
             const htmlOutputPath = path.join(targetDir, `${basename}.html`);
             const pdfOutputPath = path.join(targetDir, `${basename}.pdf`);
 
@@ -232,9 +230,10 @@ async function run() {
             await summary.write();
         } catch (summaryError) {
             core.debug(
-                `Skipping job summary: ${summaryError instanceof Error
-                    ? summaryError.message
-                    : String(summaryError)
+                `Skipping job summary: ${
+                    summaryError instanceof Error
+                        ? summaryError.message
+                        : String(summaryError)
                 }`
             );
         }
@@ -316,23 +315,23 @@ async function detectChromeExecutable(explicitPath) {
     const platformCandidates =
         process.platform === "win32"
             ? [
-                "C:/Program Files/Google/Chrome/Application/chrome.exe",
-                "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-                process.env.LOCALAPPDATA
-                    ? path.join(
-                        process.env.LOCALAPPDATA,
-                        "Google/Chrome/Application/chrome.exe"
-                    )
-                    : undefined,
-            ]
+                  "C:/Program Files/Google/Chrome/Application/chrome.exe",
+                  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+                  process.env.LOCALAPPDATA
+                      ? path.join(
+                            process.env.LOCALAPPDATA,
+                            "Google/Chrome/Application/chrome.exe"
+                        )
+                      : undefined,
+              ]
             : [
-                "/usr/bin/google-chrome",
-                "/usr/bin/google-chrome-stable",
-                "/usr/bin/chromium",
-                "/usr/bin/chromium-browser",
-                "/snap/bin/chromium",
-                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            ];
+                  "/usr/bin/google-chrome",
+                  "/usr/bin/google-chrome-stable",
+                  "/usr/bin/chromium",
+                  "/usr/bin/chromium-browser",
+                  "/snap/bin/chromium",
+                  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+              ];
 
     for (const candidate of platformCandidates) {
         if (candidate && existsSync(candidate)) {
@@ -420,10 +419,16 @@ async function readCss(cssPath, cache) {
 }
 
 function buildHtmlDocument({ title, lang, inlineCss, bodyHtml, extraHead }) {
-    const safeTitle = escapeHtml(title);
-    const headExtras = extraHead ? `\n${extraHead}\n` : "";
-    const cssBlock = inlineCss ? `\n<style>\n${inlineCss}\n</style>` : "";
-    return `<!doctype html>\n<html lang="${lang}">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>${safeTitle}</title>${headExtras}${cssBlock}\n</head>\n<body>\n${bodyHtml}\n</body>\n</html>\n`;
+    const template = fs.readFileSync(
+        path.join(__dirname, "template.html"),
+        "utf8"
+    );
+    return template
+        .replace("<!--{{TITLE}}-->", escapeHtml(title))
+        .replace("{{LANG}}", escapeHtml(lang))
+        .replace("/*{{CSS}}*/", inlineCss)
+        .replace("<!--{{BODY}}-->", bodyHtml)
+        .replace("<!--{{EXTRA_HEAD}}-->", extraHead ? `\n${extraHead}\n` : "");
 }
 
 function escapeHtml(value) {
@@ -468,7 +473,8 @@ async function convertHtmlToPdf({
 
         await waitForFonts(page, timeoutMs).catch((error) => {
             core.debug(
-                `Font readiness wait failed: ${error instanceof Error ? error.message : String(error)
+                `Font readiness wait failed: ${
+                    error instanceof Error ? error.message : String(error)
                 }`
             );
         });
