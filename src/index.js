@@ -1,10 +1,10 @@
 const core = require("@actions/core");
 const glob = require("@actions/glob");
 const path = require("path");
-const fs = require("fs/promises");
+const fs = require("fs");
 const { existsSync } = require("fs");
 const { pathToFileURL } = require("url");
-const matter = require("gray-matter");
+const fm = require("front-matter");
 const MarkdownIt = require("markdown-it");
 const puppeteer = require("puppeteer-core");
 
@@ -33,7 +33,7 @@ async function run() {
         const outputDir = outputDirInput
             ? path.resolve(workspace, outputDirInput)
             : path.resolve(workspace, "output");
-        await fs.mkdir(outputDir, { recursive: true });
+        fs.mkdirSync(outputDir, { recursive: true });
 
         const generateHtml = getBooleanInput("generate_html", true);
         const failOnMissingCss = getBooleanInput("fail_on_missing_css", false);
@@ -66,10 +66,10 @@ async function run() {
             const relativeMarkdownPath = path.relative(workspace, markdownPath);
             core.startGroup(`Processing ${relativeMarkdownPath}`);
 
-            const raw = await fs.readFile(markdownPath, "utf8");
-            const parsed = matter(raw);
-            const markdownContent = parsed.content;
-            const frontmatter = parsed.data || {};
+            const raw = fs.readFileSync(markdownPath, "utf8");
+            const parsed = fm(raw);
+            const markdownContent = parsed.body;
+            const frontmatter = parsed.attributes || {};
 
             if (shouldSkip(frontmatter)) {
                 core.info(
@@ -79,14 +79,12 @@ async function run() {
                 continue;
             }
 
-            const cssCandidates = (
-                await gatherCssPaths({
-                    frontmatter,
-                    markdownPath,
-                    workspace,
-                    globalCssFiles,
-                })
-            ).sort();
+            const cssCandidates = gatherCssPaths({
+                frontmatter,
+                markdownPath,
+                workspace,
+                globalCssFiles,
+            }).sort();
 
             if (!cssCandidates.length && failOnMissingCss) {
                 throw new Error(
@@ -111,7 +109,7 @@ async function run() {
                         `CSS file referenced for ${relativeMarkdownPath} does not exist: ${cssPath}`
                     );
                 }
-                cssContents.push(await readCss(cssPath, cssCache));
+                cssContents.push(readCss(cssPath, cssCache));
             }
 
             const htmlBody = md.render(markdownContent);
@@ -130,14 +128,14 @@ async function run() {
 
             const relativeDir = path.dirname(relativeMarkdownPath);
             const targetDir = path.join(outputDir, relativeDir);
-            await fs.mkdir(targetDir, { recursive: true });
+            fs.mkdirSync(targetDir, { recursive: true });
 
             const basename = title;
             const htmlOutputPath = path.join(targetDir, `${basename}.html`);
             const pdfOutputPath = path.join(targetDir, `${basename}.pdf`);
 
             if (generateHtml) {
-                await fs.writeFile(htmlOutputPath, documentHtml, "utf8");
+                fs.writeFileSync(htmlOutputPath, documentHtml, "utf8");
                 core.info(
                     `HTML written to ${path.relative(
                         workspace,
@@ -149,7 +147,7 @@ async function run() {
                     targetDir,
                     `.${basename}.tmp.html`
                 );
-                await fs.writeFile(tempHtmlPath, documentHtml, "utf8");
+                fs.writeFileSync(tempHtmlPath, documentHtml, "utf8");
                 await convertHtmlToPdf({
                     chromeExecutable,
                     htmlPath: tempHtmlPath,
@@ -157,7 +155,7 @@ async function run() {
                     disableSandbox,
                     timeoutMs: pdfTimeout,
                 });
-                await fs.unlink(tempHtmlPath);
+                fs.unlinkSync(tempHtmlPath);
             }
 
             if (generateHtml) {
@@ -344,7 +342,7 @@ async function detectChromeExecutable(explicitPath) {
     );
 }
 
-async function gatherCssPaths({
+function gatherCssPaths({
     frontmatter,
     markdownPath,
     workspace,
@@ -363,7 +361,7 @@ async function gatherCssPaths({
             cssSet.add(candidate);
         }
     } else {
-        const directoryEntries = await fs.readdir(path.dirname(markdownPath), {
+        const directoryEntries = fs.readdirSync(path.dirname(markdownPath), {
             withFileTypes: true,
         });
         for (const entry of directoryEntries) {
@@ -408,12 +406,12 @@ function isPathInside(child, parent) {
     return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
-async function readCss(cssPath, cache) {
+function readCss(cssPath, cache) {
     const resolved = path.resolve(cssPath);
     if (cache.has(resolved)) {
         return cache.get(resolved);
     }
-    const contents = await fs.readFile(resolved, "utf8");
+    const contents = fs.readFileSync(resolved, "utf8");
     cache.set(resolved, contents);
     return contents;
 }
@@ -447,7 +445,7 @@ async function convertHtmlToPdf({
     disableSandbox,
     timeoutMs,
 }) {
-    await fs.mkdir(path.dirname(pdfPath), { recursive: true });
+    fs.mkdirSync(path.dirname(pdfPath), { recursive: true });
 
     const launchArgs = [
         "--disable-dev-shm-usage",

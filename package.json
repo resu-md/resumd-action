@@ -1,20 +1,20 @@
 {
-  "name": "resumd-action",
-  "version": "0.1.0",
-  "description": "Github Action to generate PDFs directly from Markdown + CSS inside your repository.",
-  "license": "MIT",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "ncc build src/index.js -o dist"
-  },
-  "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/glob": "^0.4.0",
-    "gray-matter": "^4.0.3",
-    "markdown-it": "^13.0.2",
-    "puppeteer-core": "^23.6.0"
-  },
-  "devDependencies": {
-    "@vercel/ncc": "^0.38.1"
-  }
+    "name": "resumd-action",
+    "version": "0.1.0",
+    "description": "Github Action to generate PDFs directly from Markdown + CSS inside your repository.",
+    "license": "MIT",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "ncc build src/index.js -o dist"
+    },
+    "dependencies": {
+        "@actions/core": "^1.11.1",
+        "@actions/glob": "^0.4.0",
+        "front-matter": "^4.0.2",
+        "markdown-it": "^13.0.2",
+        "puppeteer-core": "^23.6.0"
+    },
+    "devDependencies": {
+        "@vercel/ncc": "^0.38.1"
+    }
 }

@@ -47,7 +47,7 @@ css:
 ---
 ```
 
--   `title`: Sets the output filename (without extension) and the HTML `<title>` element.
+-   `title`: Sets the output filename (**without extension**). If `generate_html` is enabled, it also sets the HTML `<title>`.
 -   `lang`: Sets the `<html lang="...">` attribute.
 -   `css`: Relative paths (from the Markdown file) to include specific CSS files. When omitted, every `.css` file in the same folder is included by default.
 -   `draft` / `skip`: Set to `true` to skip rendering that Markdown file. Alternatively set `publish: false`.
