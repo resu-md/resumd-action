@@ -5,8 +5,18 @@ const fs = require("fs");
 const { existsSync } = require("fs");
 const { pathToFileURL } = require("url");
 const fm = require("front-matter");
-const MarkdownIt = require("markdown-it");
+const { marked } = require("marked");
 const puppeteer = require("puppeteer-core");
+
+marked.use({
+    tokenizer: {
+        url(_) {
+            // Disable automatic links for plain URLs/emails
+            // www.example.com or test@gmail.com will not become <a> unless wrapped in [link.com](link.com)
+            return undefined;
+        },
+    },
+});
 
 async function run() {
     try {
@@ -51,11 +61,6 @@ async function run() {
             workspace
         );
 
-        const md = new MarkdownIt({
-            html: true,
-            linkify: true,
-            typographer: true,
-        });
         const cssCache = new Map();
         const results = [];
 
@@ -112,7 +117,7 @@ async function run() {
                 cssContents.push(readCss(cssPath, cssCache));
             }
 
-            const htmlBody = md.render(markdownContent);
+            const htmlBody = marked(markdownContent);
             const title =
                 frontmatter.title ||
                 path.basename(markdownPath, path.extname(markdownPath));
