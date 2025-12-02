@@ -45,7 +45,7 @@ async function run() {
             : path.resolve(workspace, "output");
         fs.mkdirSync(outputDir, { recursive: true });
 
-        const generateHtml = getBooleanInput("generate_html", true);
+        const generateHtml = getBooleanInput("generate_html", false);
         const failOnMissingCss = getBooleanInput("fail_on_missing_css", false);
         const disableSandbox = getBooleanInput(
             "disable_sandbox",
